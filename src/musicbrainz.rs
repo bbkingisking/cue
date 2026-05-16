@@ -25,6 +25,7 @@ pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, Netw
     );
 
     let musicbrainz_response = ureq::get(url)
+        .header("User-Agent", "cue (https://github.com/bbkingisking/cue)")
         .call()
         .map_err(NetworkError::RequestFailed)?
         .body_mut()
