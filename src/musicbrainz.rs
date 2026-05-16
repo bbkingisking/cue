@@ -7,6 +7,7 @@ use crate::config::{Artist, ReleaseType};
 #[serde(rename_all = "kebab-case")]
 pub struct MusicBrainzResponse {
     pub release_groups: Vec<MusicBrainzRelease>,
+    pub release_group_count: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -18,21 +19,38 @@ pub struct MusicBrainzRelease {
     primary_type: Option<String>,
 }
 
+const PAGE_SIZE: u32 = 100;
+
 pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, NetworkError> {
-    let url = format!(
-        "https://musicbrainz.org/ws/2/release-group?artist={}&fmt=json&limit=100",
-        artist_mbid
-    );
+    let mut all_releases: Vec<MusicBrainzRelease> = Vec::new();
+    let mut offset: u32 = 0;
 
-    let musicbrainz_response = ureq::get(url)
-        .header("User-Agent", "cue (https://github.com/bbkingisking/cue)")
-        .call()
-        .map_err(NetworkError::RequestFailed)?
-        .body_mut()
-        .read_json::<MusicBrainzResponse>()
-        .map_err(NetworkError::DeserializationFailed)?;
+    loop {
+        let url = format!(
+            "https://musicbrainz.org/ws/2/release-group?artist={}&fmt=json&limit={}&offset={}",
+            artist_mbid, PAGE_SIZE, offset
+        );
 
-    Ok(musicbrainz_response.release_groups)
+        let page = ureq::get(url)
+            .header("User-Agent", "cue (https://github.com/bbkingisking/cue)")
+            .call()
+            .map_err(NetworkError::RequestFailed)?
+            .body_mut()
+            .read_json::<MusicBrainzResponse>()
+            .map_err(NetworkError::DeserializationFailed)?;
+
+        let total = page.release_group_count;
+        all_releases.extend(page.release_groups);
+        offset += PAGE_SIZE;
+
+        if offset >= total {
+            break;
+        }
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+
+    Ok(all_releases)
 }
 
 pub fn filter_releases(releases: &[MusicBrainzRelease], required: &[ReleaseType]) -> Vec<MusicBrainzRelease> {
