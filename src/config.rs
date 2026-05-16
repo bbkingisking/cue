@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use dirs::config_dir;
 use thiserror::Error;
@@ -29,7 +30,7 @@ impl Artist {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "PascalCase")]
 pub enum ReleaseType {
     Album,

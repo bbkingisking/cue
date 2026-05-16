@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -55,7 +56,10 @@ pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, Netw
 
 pub fn filter_releases(releases: &[MusicBrainzRelease], required: &[ReleaseType]) -> Vec<MusicBrainzRelease> {
     // If all release types are required, no need to filter
-    if required == Artist::all_release_types() {
+    let required_set: HashSet<&ReleaseType> = required.iter().collect();
+    let all_types = Artist::all_release_types();
+    let all_set: HashSet<&ReleaseType> = all_types.iter().collect();
+    if required_set == all_set {
         return releases.to_vec()
     }
 
