@@ -1,4 +1,5 @@
 use std::{collections::HashMap, path::PathBuf};
+use temp_dir::TempDir;
 use serde::{Deserialize, Serialize};
 use dirs::data_dir;
 use thiserror::Error;
@@ -50,9 +51,12 @@ impl State {
     }
 
     pub fn persist(&self) -> Result<(), StateError> {
-        let path = Self::path()?.join(STATE_FILENAME);
+        let final_path = Self::path()?.join(STATE_FILENAME);
         let serialized = serde_json::to_string(&self)?;
-        std::fs::write(path, serialized)?;
+        let tmp = TempDir::new()?;
+        let tmp_file = tmp.path().join(STATE_FILENAME);
+        std::fs::write(&tmp_file, serialized)?;
+        std::fs::rename(&tmp_file, &final_path)?;
         Ok(())
     }
 }
