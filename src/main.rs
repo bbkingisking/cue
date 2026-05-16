@@ -1,9 +1,11 @@
 mod config;
+mod state;
+mod musicbrainz;
 
-use crate::config::{Config, ConfigError};
+use crate::{config::{Config, ConfigError}, state::{State, StateError}};
 
 fn main() -> Result<(), anyhow::Error> {
-    let _conf = match Config::load() {
+    let conf = match Config::load() {
         Ok(c) => c,
         Err(ConfigError::ConfigNotFound) => {
             let config_path = Config::create()?;
@@ -13,5 +15,14 @@ fn main() -> Result<(), anyhow::Error> {
         Err(e) => return Err(e.into())
     };
 
+    let mut state = match State::load() {
+        Ok(s) => s,
+        Err(StateError::StateNotFound) => State::create()?,
+        Err(e) => return Err(e.into())
+    };
+
+    let _new_releases = state.sync(&conf)?;
+    state.persist()?;
+    // iterate over new_releases and print to stdout
     Ok(())
 }

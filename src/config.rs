@@ -7,18 +7,18 @@ const CONFIG_FILENAME: &str = "config.toml";
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {
-    artists: Vec<Artist>
+    pub artists: Vec<Artist>
 }
 
 #[derive(Serialize, Deserialize)]
-struct Artist {
-    mbid: String,
-    release_types: Vec<ReleaseType>,
+pub struct Artist {
+    pub mbid: String,
+    pub release_types: Vec<ReleaseType>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
-enum ReleaseType {
+pub enum ReleaseType {
     Album,
     Single,
     #[serde(rename = "EP")]
