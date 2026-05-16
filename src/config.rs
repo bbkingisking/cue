@@ -13,7 +13,7 @@ pub struct Config {
 #[derive(Serialize, Deserialize)]
 pub struct Artist {
     pub mbid: String,
-    pub release_types: Vec<ReleaseType>,
+    pub release_types: Option<Vec<ReleaseType>>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
@@ -51,7 +51,7 @@ impl Config {
         let sample_config = Config {
             artists: vec![Artist {
                 mbid: "b9545342-1e6d-4dae-84ac-013374ad8d7c".to_string(),
-                release_types: vec![ReleaseType::Album, ReleaseType::EP],
+                release_types: Some(vec![ReleaseType::Album, ReleaseType::EP]),
             }]
         };
 
