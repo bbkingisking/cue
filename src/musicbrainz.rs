@@ -10,7 +10,7 @@ pub struct MusicBrainzResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct MusicBrainzRelease {
-    title: String,
+    pub title: String,
     id: String,
     first_release_date: String,
     primary_type: Option<String>,

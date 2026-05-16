@@ -42,6 +42,9 @@ fn main() -> Result<(), anyhow::Error> {
 
     state.persist()?;
 
-    // iterate over new_releases and print to stdout
+    for new_release in new_releases {
+        println!("{}", new_release.title)
+    }
+
     Ok(())
 }
