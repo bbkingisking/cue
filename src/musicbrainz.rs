@@ -32,12 +32,15 @@ pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, Netw
             artist_mbid, PAGE_SIZE, offset
         );
 
-        let page = ureq::get(url)
+        let body = ureq::get(url)
             .header("User-Agent", "cue (https://github.com/bbkingisking/cue)")
             .call()
             .map_err(NetworkError::RequestFailed)?
             .body_mut()
-            .read_json::<MusicBrainzResponse>()
+            .read_to_string()
+            .map_err(NetworkError::RequestFailed)?;
+
+        let page = serde_json::from_str::<MusicBrainzResponse>(&body)
             .map_err(NetworkError::DeserializationFailed)?;
 
         let total = page.release_group_count;
@@ -90,7 +93,7 @@ pub fn diff(local: &[MusicBrainzRelease], fresh: &[MusicBrainzRelease]) -> Vec<M
 #[derive(Error, Debug)]
 pub enum NetworkError {
     #[error("Could not send a request to musicbrainz's API.")]
-    RequestFailed(#[from] ureq::Error),
+    RequestFailed(ureq::Error),
     #[error("Could not deserialize MusicBrainz response.")]
-    DeserializationFailed(ureq::Error),
+    DeserializationFailed(#[from] serde_json::Error),
 }

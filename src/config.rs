@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use dirs::config_dir;
 use thiserror::Error;
