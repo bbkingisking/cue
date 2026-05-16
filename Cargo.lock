@@ -88,7 +88,6 @@ dependencies = [
  "dirs",
  "serde",
  "serde_json",
- "temp-dir",
  "thiserror",
  "toml",
  "ureq",
@@ -596,12 +595,6 @@ dependencies = [
  "quote",
  "syn",
 ]
-
-[[package]]
-name = "temp-dir"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "016ef9739649996fcc983b9c588fe3d557cf216d4d98503ce1b057ab5a66d689"
 
 [[package]]
 name = "thiserror"
