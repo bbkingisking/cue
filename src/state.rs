@@ -41,7 +41,7 @@ impl State {
 
     pub fn update_existing_artist(&mut self, artist: &Artist, releases: Vec<MusicBrainzRelease>) {
         let existing_releases = self.artists.get_mut(&artist.mbid).expect("artist should exist in state after partition");
-        existing_releases.extend(releases.iter().cloned());
+        existing_releases.extend(releases);
 
     }
 

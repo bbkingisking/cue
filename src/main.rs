@@ -27,6 +27,7 @@ fn main() -> Result<(), anyhow::Error> {
         .iter()
         .partition(|a| !state.artists.contains_key(&a.mbid));
 
+    // These need their own branch since we don't want to print out every release
     for artist in new_artists {
         let all_releases = fetch_releases(&artist.mbid)?;
         let filtered_releases = filter_releases(&all_releases, &artist.release_types);
