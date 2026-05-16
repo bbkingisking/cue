@@ -38,8 +38,7 @@ impl Config {
     pub fn load() -> Result<Config, ConfigError> {
         let path = Self::path()?.join(CONFIG_FILENAME);
         if !path.try_exists()? {
-            let dummy_config_dir = Self::create()?;
-            return Err(ConfigError::ConfigNotFound(dummy_config_dir.join(CONFIG_FILENAME).to_string_lossy().into_owned()))
+            return Err(ConfigError::ConfigNotFound)
         }
         let raw = std::fs::read_to_string(path)?;
         Ok(toml::from_str(&raw)?)
@@ -74,6 +73,6 @@ pub enum ConfigError {
     ConfigCouldNotDeserialize(#[from] toml::de::Error),
     #[error("Could not serialize config.")]
     ConfigCouldNotSerialize(#[from] toml::ser::Error),
-    #[error("Config not found. A sample config was created in `{0}`, please edit it manually and re-run the app.")]
-    ConfigNotFound(String),
+    #[error("Config not found.")]
+    ConfigNotFound,
 }
