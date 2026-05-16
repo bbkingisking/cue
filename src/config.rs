@@ -1,0 +1,79 @@
+use std::path::PathBuf;
+use serde::{Deserialize, Serialize};
+use dirs::config_dir;
+use thiserror::Error;
+
+const CONFIG_FILENAME: &str = "config.toml";
+
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+    artists: Vec<Artist>
+}
+
+#[derive(Serialize, Deserialize)]
+struct Artist {
+    mbid: String,
+    release_types: Vec<ReleaseType>,
+}
+
+#[derive(Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+enum ReleaseType {
+    Album,
+    Single,
+    #[serde(rename = "EP")]
+    EP,
+    Live,
+    Compilation,
+}
+
+
+impl Config {
+    fn path() -> Result<PathBuf, ConfigError> {
+        let xdg_conf = config_dir().ok_or(ConfigError::ConfigDirNotFound)?;
+        let app_conf = xdg_conf.join(env!("CARGO_PKG_NAME"));
+        Ok(app_conf)
+    }
+
+    pub fn load() -> Result<Config, ConfigError> {
+        let path = Self::path()?.join(CONFIG_FILENAME);
+        if !path.try_exists()? {
+            let dummy_config_dir = Self::create()?;
+            return Err(ConfigError::ConfigNotFound(dummy_config_dir.join(CONFIG_FILENAME).to_string_lossy().into_owned()))
+        }
+        let raw = std::fs::read_to_string(path)?;
+        Ok(toml::from_str(&raw)?)
+    }
+
+    pub fn create() -> Result<PathBuf, ConfigError> {
+        let path = Self::path()?;
+        std::fs::create_dir_all(&path)?;
+
+        let sample_config = Config {
+            artists: vec![Artist {
+                mbid: "b9545342-1e6d-4dae-84ac-013374ad8d7c".to_string(),
+                release_types: vec![ReleaseType::Album, ReleaseType::EP],
+            }]
+        };
+
+        let sample_config_serialized = toml::to_string_pretty(&sample_config)?;
+
+        std::fs::write(path.join(CONFIG_FILENAME), &sample_config_serialized)?;
+
+        Ok(path)
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum ConfigError {
+    #[error("Could not find config dir.")]
+    ConfigDirNotFound,
+    #[error("Could not access config file.")]
+    ConfigInaccessible(#[from] std::io::Error),
+    #[error("Could not deserialize config.")]
+    ConfigCouldNotDeserialize(#[from] toml::de::Error),
+    #[error("Could not serialize config.")]
+    ConfigCouldNotSerialize(#[from] toml::ser::Error),
+    #[error("Config not found. A sample config was created in `{0}`, please edit it manually and re-run the app.")]
+    ConfigNotFound(String),
+}
