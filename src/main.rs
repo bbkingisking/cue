@@ -2,6 +2,8 @@ mod config;
 mod state;
 mod musicbrainz;
 
+use std::{thread::sleep, time::Duration};
+
 use crate::{config::{Config, ConfigError}, musicbrainz::{MusicBrainzRelease, diff, fetch_releases, filter_releases}, state::{State, StateError}};
 
 fn main() -> Result<(), anyhow::Error> {
@@ -31,6 +33,7 @@ fn main() -> Result<(), anyhow::Error> {
         let all_releases = fetch_releases(&artist.mbid)?;
         let filtered_releases = filter_releases(&all_releases, &artist.release_types);
         state.insert_new_artist(artist, filtered_releases);
+        sleep(Duration::from_secs(1));
     }
 
     for artist in existing_artists {
@@ -41,6 +44,7 @@ fn main() -> Result<(), anyhow::Error> {
         let delta = diff(local, &filtered_releases);
         new_releases.extend(delta.clone());
         state.update_existing_artist(artist, delta);
+        sleep(Duration::from_secs(1));
     }
 
     state.persist()?;
