@@ -1,21 +1,5 @@
 use serde::{Deserialize, Serialize};
-
 use thiserror::Error;
-
-pub fn fetch_releases(_aritst_mbid: &str) -> Result<Vec<MusicBrainzRelease>, NetworkError> {
-    todo!();
-}
-
-pub fn diff(local: &[MusicBrainzRelease], fresh: &[MusicBrainzRelease]) -> Vec<MusicBrainzRelease> {
-    let delta: Vec<MusicBrainzRelease> = fresh
-        .iter()
-        .filter(|r| !local.iter().any(|k| k.id == r.id))
-        .cloned()
-        .collect();
-
-    delta
-}
-
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "kebab-case")]
@@ -33,6 +17,36 @@ pub struct MusicBrainzRelease {
     primary_type_id: Option<String>,
 }
 
+pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, NetworkError> {
+    let url = format!(
+        "https://musicbrainz.org/ws/2/release-group?artist={}&fmt=json&limit=100",
+        artist_mbid
+    );
+
+    let musicbrainz_response = ureq::get(url)
+        .call()
+        .map_err(NetworkError::RequestFailed)?
+        .body_mut()
+        .read_json::<MusicBrainzResponse>()
+        .map_err(NetworkError::DeserializationFailed)?;
+
+    Ok(musicbrainz_response.release_groups)
+}
+
+pub fn diff(local: &[MusicBrainzRelease], fresh: &[MusicBrainzRelease]) -> Vec<MusicBrainzRelease> {
+    let delta: Vec<MusicBrainzRelease> = fresh
+        .iter()
+        .filter(|r| !local.iter().any(|k| k.id == r.id))
+        .cloned()
+        .collect();
+
+    delta
+}
 
 #[derive(Error, Debug)]
-pub enum NetworkError { }
+pub enum NetworkError {
+    #[error("Could not send a request to musicbrainz's API.")]
+    RequestFailed(#[from] ureq::Error),
+    #[error("Could not deserialize MusicBrainz response.")]
+    DeserializationFailed(ureq::Error),
+}
