@@ -2,7 +2,7 @@ mod config;
 mod state;
 mod musicbrainz;
 
-use crate::{config::{Config, ConfigError}, state::{State, StateError}};
+use crate::{config::{Config, ConfigError}, musicbrainz::{diff, fetch_releases, MusicBrainzRelease}, state::{State, StateError}};
 
 fn main() -> Result<(), anyhow::Error> {
     let conf = match Config::load() {
@@ -21,8 +21,27 @@ fn main() -> Result<(), anyhow::Error> {
         Err(e) => return Err(e.into())
     };
 
-    let _new_releases = state.sync(&conf)?;
+    let mut new_releases: Vec<MusicBrainzRelease> = Vec::new();
+
+    let (new_artists, existing_artists): (Vec<_>, Vec<_>) = conf.artists
+        .iter()
+        .partition(|a| !state.artists.contains_key(&a.mbid));
+
+    for artist in new_artists {
+        let releases = fetch_releases(&artist.mbid)?;
+        state.insert_new_artist(artist, releases);
+    }
+
+    for artist in existing_artists {
+        let fresh = fetch_releases(&artist.mbid)?;
+        let local = state.artists.get(&artist.mbid).expect("Artist should exist at this point.");
+        let delta = diff(local, &fresh);
+        new_releases.extend(delta.clone());
+        state.update_existing_artist(artist, delta);
+    }
+
     state.persist()?;
+
     // iterate over new_releases and print to stdout
     Ok(())
 }
