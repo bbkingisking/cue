@@ -81,13 +81,12 @@ pub fn filter_releases(releases: &[MusicBrainzRelease], required: &[ReleaseType]
 }
 
 pub fn diff(local: &[MusicBrainzRelease], fresh: &[MusicBrainzRelease]) -> Vec<MusicBrainzRelease> {
-    let delta: Vec<MusicBrainzRelease> = fresh
+    let local_ids: std::collections::HashSet<&str> = local.iter().map(|r| r.id.as_str()).collect();
+    fresh
         .iter()
-        .filter(|r| !local.iter().any(|k| k.id == r.id))
+        .filter(|r| !local_ids.contains(r.id.as_str()))
         .cloned()
-        .collect();
-
-    delta
+        .collect()
 }
 
 #[derive(Error, Debug)]
