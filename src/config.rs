@@ -13,7 +13,20 @@ pub struct Config {
 #[derive(Serialize, Deserialize)]
 pub struct Artist {
     pub mbid: String,
-    pub release_types: Option<Vec<ReleaseType>>,
+    #[serde(default = "Artist::all_release_types")]
+    pub release_types: Vec<ReleaseType>,
+}
+
+impl Artist {
+    pub fn all_release_types() -> Vec<ReleaseType> {
+        vec![
+            ReleaseType::Album,
+            ReleaseType::Single,
+            ReleaseType::EP,
+            ReleaseType::Live,
+            ReleaseType::Compilation,
+        ]
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
@@ -27,6 +40,17 @@ pub enum ReleaseType {
     Compilation,
 }
 
+impl ReleaseType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            ReleaseType::Album => "Album",
+            ReleaseType::Single => "Single",
+            ReleaseType::EP => "EP",
+            ReleaseType::Live => "Live",
+            ReleaseType::Compilation => "Compilation",
+        }
+    }
+}
 
 impl Config {
     fn path() -> Result<PathBuf, ConfigError> {
@@ -51,7 +75,7 @@ impl Config {
         let sample_config = Config {
             artists: vec![Artist {
                 mbid: "b9545342-1e6d-4dae-84ac-013374ad8d7c".to_string(),
-                release_types: Some(vec![ReleaseType::Album, ReleaseType::EP]),
+                release_types: vec![ReleaseType::Album, ReleaseType::EP],
             }]
         };
 

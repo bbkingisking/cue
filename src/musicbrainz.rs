@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::config::{Artist, ReleaseType};
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub struct MusicBrainzResponse {
@@ -14,7 +16,6 @@ pub struct MusicBrainzRelease {
     id: String,
     first_release_date: String,
     primary_type: Option<String>,
-    primary_type_id: Option<String>,
 }
 
 pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, NetworkError> {
@@ -31,6 +32,26 @@ pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, Netw
         .map_err(NetworkError::DeserializationFailed)?;
 
     Ok(musicbrainz_response.release_groups)
+}
+
+pub fn filter_releases(releases: &[MusicBrainzRelease], required: &[ReleaseType]) -> Vec<MusicBrainzRelease> {
+    // If all release types are required, no need to filter
+    if required == Artist::all_release_types() {
+        return releases.to_vec()
+    }
+
+    // Filter for the required release types
+    let filtered_releases: Vec<MusicBrainzRelease> = releases
+        .to_owned()
+        .into_iter()
+        .filter(|g| {
+            g.primary_type.as_deref()
+                .map(|pt| required.iter().any(|rt| rt.as_str() == pt))
+                .unwrap_or(false)
+        })
+        .collect();
+
+    filtered_releases
 }
 
 pub fn diff(local: &[MusicBrainzRelease], fresh: &[MusicBrainzRelease]) -> Vec<MusicBrainzRelease> {

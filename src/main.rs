@@ -2,7 +2,7 @@ mod config;
 mod state;
 mod musicbrainz;
 
-use crate::{config::{Config, ConfigError}, musicbrainz::{diff, fetch_releases, MusicBrainzRelease}, state::{State, StateError}};
+use crate::{config::{Config, ConfigError}, musicbrainz::{MusicBrainzRelease, diff, fetch_releases, filter_releases}, state::{State, StateError}};
 
 fn main() -> Result<(), anyhow::Error> {
     let conf = match Config::load() {
@@ -28,14 +28,17 @@ fn main() -> Result<(), anyhow::Error> {
         .partition(|a| !state.artists.contains_key(&a.mbid));
 
     for artist in new_artists {
-        let releases = fetch_releases(&artist.mbid)?;
-        state.insert_new_artist(artist, releases);
+        let all_releases = fetch_releases(&artist.mbid)?;
+        let filtered_releases = filter_releases(&all_releases, &artist.release_types);
+        state.insert_new_artist(artist, filtered_releases);
     }
 
     for artist in existing_artists {
-        let fresh = fetch_releases(&artist.mbid)?;
+        let all_releases = fetch_releases(&artist.mbid)?;
+        let filtered_releases = filter_releases(&all_releases, &artist.release_types);
+
         let local = state.artists.get(&artist.mbid).expect("Artist should exist at this point.");
-        let delta = diff(local, &fresh);
+        let delta = diff(local, &filtered_releases);
         new_releases.extend(delta.clone());
         state.update_existing_artist(artist, delta);
     }
