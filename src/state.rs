@@ -67,6 +67,4 @@ pub enum StateError {
     StateCouldNotDeserialize(#[from] serde_json::Error),
     #[error("Could not find state.json")]
     StateNotFound,
-    #[error("Could not send a request to musicbrainz API.")]
-    NetworkError(#[from] ureq::Error),
 }
