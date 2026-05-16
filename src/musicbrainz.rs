@@ -47,11 +47,11 @@ pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, Netw
         all_releases.extend(page.release_groups);
         offset += PAGE_SIZE;
 
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         if offset >= total {
             break;
         }
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
     }
 
     Ok(all_releases)
