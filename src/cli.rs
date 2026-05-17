@@ -7,4 +7,6 @@ pub struct Cli {
     // Output format template. Specifiers: %A (artist), %T (title), %D (date), %I (MusicBrainz ID), %R (release type)
     #[arg(short = 'f', long = "format", default_value = DEFAULT_FORMAT)]
     pub format: String,
+    #[arg(short = 'v', long = "verbose", default_value = "false")]
+    pub verbose: bool,
 }
