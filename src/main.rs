@@ -1,11 +1,15 @@
+mod cli;
 mod config;
 mod state;
 mod musicbrainz;
 mod output;
 
-use crate::{config::{Config, ConfigError}, musicbrainz::{MusicBrainzRelease, diff, fetch_artist_name, fetch_releases, filter_releases}, output::print_output, state::{State, StateError}};
+use clap::Parser;
+use crate::{cli::Cli, config::{Config, ConfigError}, musicbrainz::{MusicBrainzRelease, diff, fetch_artist_name, fetch_releases, filter_releases}, output::print_output, state::{State, StateError}};
 
 fn main() -> Result<(), anyhow::Error> {
+    let cli = Cli::parse();
+
     let conf = match Config::load() {
         Ok(c) => c,
         Err(ConfigError::ConfigNotFound) => {
@@ -54,7 +58,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     state.persist()?;
 
-    print_output(&new_releases);
+    print_output(&new_releases, &cli.format);
 
     Ok(())
 }

@@ -20,9 +20,9 @@ pub struct MusicBrainzResponse {
 #[serde(rename_all = "kebab-case")]
 pub struct MusicBrainzRelease {
     pub title: String,
-    id: String,
+    pub id: String,
     pub first_release_date: String,
-    primary_type: Option<String>,
+    pub primary_type: Option<String>,
 }
 
 const PAGE_SIZE: u32 = 100;
