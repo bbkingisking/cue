@@ -9,8 +9,14 @@ use crate::{config::Artist};
 const STATE_FILENAME: &str = "state.json";
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct ArtistState {
+    pub name: String,
+    pub releases: Vec<MusicBrainzRelease>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct State {
-    pub artists: HashMap<String, Vec<MusicBrainzRelease>>,
+    pub artists: HashMap<String, ArtistState>,
 }
 
 impl State {
@@ -40,13 +46,12 @@ impl State {
     }
 
     pub fn update_existing_artist(&mut self, artist: &Artist, releases: Vec<MusicBrainzRelease>) {
-        let existing_releases = self.artists.get_mut(&artist.mbid).expect("artist should exist in state after partition");
-        existing_releases.extend(releases);
-
+        let artist_state = self.artists.get_mut(&artist.mbid).expect("artist should exist in state after partition");
+        artist_state.releases.extend(releases);
     }
 
-    pub fn insert_new_artist(&mut self, artist: &Artist, releases: Vec<MusicBrainzRelease>) {
-        self.artists.insert(artist.mbid.clone(), releases);
+    pub fn insert_new_artist(&mut self, artist: &Artist, name: String, releases: Vec<MusicBrainzRelease>) {
+        self.artists.insert(artist.mbid.clone(), ArtistState { name, releases });
     }
 
     pub fn persist(&self) -> Result<(), StateError> {

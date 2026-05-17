@@ -2,6 +2,11 @@ use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+#[derive(Deserialize)]
+struct MusicBrainzArtist {
+    name: String,
+}
+
 use crate::config::{Artist, ReleaseType};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -16,7 +21,7 @@ pub struct MusicBrainzResponse {
 pub struct MusicBrainzRelease {
     pub title: String,
     id: String,
-    first_release_date: String,
+    pub first_release_date: String,
     primary_type: Option<String>,
 }
 
@@ -47,7 +52,7 @@ pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, Netw
         all_releases.extend(page.release_groups);
         offset += PAGE_SIZE;
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_millis(1100));
 
         if offset >= total {
             break;
@@ -55,6 +60,28 @@ pub fn fetch_releases(artist_mbid: &str) -> Result<Vec<MusicBrainzRelease>, Netw
     }
 
     Ok(all_releases)
+}
+
+pub fn fetch_artist_name(artist_mbid: &str) -> Result<String, NetworkError> {
+    let url = format!(
+        "https://musicbrainz.org/ws/2/artist/{}?fmt=json",
+        artist_mbid
+    );
+
+    let body = ureq::get(url)
+        .header("User-Agent", "cue (https://github.com/bbkingisking/cue)")
+        .call()
+        .map_err(NetworkError::RequestFailed)?
+        .body_mut()
+        .read_to_string()
+        .map_err(NetworkError::RequestFailed)?;
+
+    let artist = serde_json::from_str::<MusicBrainzArtist>(&body)
+        .map_err(NetworkError::DeserializationFailed)?;
+
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+
+    Ok(artist.name)
 }
 
 pub fn filter_releases(releases: &[MusicBrainzRelease], required: &[ReleaseType]) -> Vec<MusicBrainzRelease> {
