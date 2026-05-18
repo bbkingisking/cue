@@ -48,8 +48,11 @@ fn main() -> Result<(), anyhow::Error> {
         .iter()
         .partition(|a| !state.artists.contains_key(&a.mbid));
 
+    if !new_artists.is_empty() {
+        info!("{} new artists in config.", &new_artists.len());
+    }
+
     // These need their own branch since we don't want to print out every release
-    info!("{} artists in config but not in local state.", &new_artists.len());
     for artist in new_artists {
         let name = fetch_artist_name(&artist.mbid)?;
         let all_releases = fetch_releases(&artist.mbid)?;
@@ -76,7 +79,6 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     state.persist()?;
-    info!("State saved successfully.");
     print_output(&new_releases, &cli.format);
 
     Ok(())

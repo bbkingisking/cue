@@ -2,8 +2,9 @@ use std::{collections::HashMap, path::PathBuf};
 use serde::{Deserialize, Serialize};
 use dirs::data_dir;
 use thiserror::Error;
-use crate::musicbrainz::MusicBrainzRelease;
+use log::info;
 
+use crate::musicbrainz::MusicBrainzRelease;
 use crate::{config::Artist};
 
 const STATE_FILENAME: &str = "state.json";
@@ -17,6 +18,8 @@ pub struct ArtistState {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct State {
     pub artists: HashMap<String, ArtistState>,
+    #[serde(skip)]
+    modified: bool
 }
 
 impl State {
@@ -29,7 +32,7 @@ impl State {
     pub fn create() -> Result<State, StateError> {
         let path = Self::path()?;
         std::fs::create_dir_all(&path)?;
-        let empty_state = State { artists: HashMap::new() };
+        let empty_state = State { artists: HashMap::new(), modified: false };
         let serialized = serde_json::to_string(&empty_state)?;
         std::fs::write(path.join(STATE_FILENAME), serialized)?;
         Ok(empty_state)
@@ -46,21 +49,27 @@ impl State {
     }
 
     pub fn update_existing_artist(&mut self, artist: &Artist, releases: Vec<MusicBrainzRelease>) {
+        if releases.is_empty() { return }
         let artist_state = self.artists.get_mut(&artist.mbid).expect("artist should exist in state after partition");
         artist_state.releases.extend(releases);
+        self.modified = true;
     }
 
     pub fn insert_new_artist(&mut self, artist: &Artist, name: String, releases: Vec<MusicBrainzRelease>) {
+        if releases.is_empty() { return }
         self.artists.insert(artist.mbid.clone(), ArtistState { name, releases });
+        self.modified = true;
     }
 
     pub fn persist(&self) -> Result<(), StateError> {
+        if !self.modified { return Ok(()) }
         let dir = Self::path()?;
         let final_path = dir.join(STATE_FILENAME);
         let tmp_file = dir.join(format!("{}.tmp", STATE_FILENAME));
         let serialized = serde_json::to_string(&self)?;
         std::fs::write(&tmp_file, &serialized)?;
         std::fs::rename(&tmp_file, &final_path)?;
+        info!("State saved successfully.");
         Ok(())
     }
 }
